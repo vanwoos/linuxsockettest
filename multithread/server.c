@@ -16,22 +16,26 @@ void * handleConn(void * connfd)
 	while(1)
 	{
 		n=recv(*(int *)connfd,buff,MAXLINE,0);
-		if(n==0) return (void *)0;
+		if(n==0) break;
 		buff[n]='\0';
 		//send(connfd,buff,n,0);
 		printf("recv msg from client:%s\n",buff);
 	}
+	close(*(int *)connfd);
 	return (void *)0;
 }
 
 int main()
 {
 	int serverfd,connfd;
-	pthread_t th1;
+	pthread_t tid;
+	pthread_attr_t attr;
 	struct sockaddr_in servaddr;
 	char buff[MAXLINE+1];
 	int n;
-
+	
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 	printf("start run socket\n");
 	serverfd=socket(AF_INET,SOCK_STREAM,0);
 	if(serverfd==-1)
@@ -63,9 +67,10 @@ int main()
 			printf("run accept faild\n");
 		else
 			printf("run accept succeed\n");
-		pthread_create(NULL,NULL,handleConn,(void *)&connfd);
+		pthread_create(&tid,&attr,handleConn,(void *)&connfd);
 		//pthread_join(th1,NULL);
-		close(connfd);
+		//close(connfd);
 	}
 	close(serverfd);
+	pthread_attr_destroy(&attr);
 }
